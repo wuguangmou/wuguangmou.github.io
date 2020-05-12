@@ -10,7 +10,7 @@
     
     
     
-    <title>0基础快速搭建个人博客 | Hexo</title>
+    <title>Tags: redis | Hexo</title>
     <!-- inject:style -->
     <link href="/css/style.css" rel="stylesheet" type="text/css">
     <!-- endinject -->
@@ -160,102 +160,29 @@
     
     <div class="cube-content">
         <div class="cube-left">
-            <div class="cube-article">
-    <h1 class="title">0基础快速搭建个人博客</h1>
+            <style>
+    @media(max-width: 768px) {
+        body {
+            background-color: #fff!important;
+        }
+    }
+</style>
+<div class="cube-archives">
     
-    <div class="cube-article-header">
-        <div class="cube-article-date">
-            <i class="cube-icon cube-icon-date" aria-hidden="true"></i>
-            <!-- moment.js对象 -->
-            2020-05-05
-        </div>
-        <div class="cube-article-tags">
-    <i class="cube-icon cube-icon-tag" aria-hidden="true"></i>
-    
-    <a href="/tags/%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/">#搭建博客</a>
-    
-</div>
+    <div class="cube-archive" style="margin-top: 0;">
+        <h1 class="title">redis</h1>
+        
+        <ul class="posts">
+            
+            <li class="post">
+                <a href="/2020/05/12/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/">redis(2)-深入了解redis持久化机制</a>
+            </li>
+            
+        </ul>
+        
     </div>
     
-    <div class="cube-article-content cube-markdown">
-        
-        <p>　　最近想搭建一个自己的个人技术博客，期间踩了不少坑，因此想写一篇博文，帮助大家更好地建站。目前比较主流的静态网页生成工具有wordpress、jekyll、hexo、hugo、pelican、vuepress等。下面将介绍一下具体的区别。</p>
-<p>　　wordpress是基于php语言编写的，使用wordpress搭建的博客是动态博客。与动态博客相对应的肯定是静态博客，jekyll、hexo、hugo等工具生成的网站博客都是静态的。个人理解动态与静态的区别就在于内容是否可以修改、管理。</p>
-<p>　　除了wordpress，其余的都是静态博客生成工具，不同的是这些框架的开发语言不同。jekyll是基于ruby语言编写的，hexo是基于nodejs编写的，hugo是基于go语言编写的，pelican是基于python编写的，vuepress是vue实现的，其余的框架也都大同小异。</p>
-<p>下面我们将基于hexo快速搭建一个属于自己的博客。</p>
-<p><a href="#1"> 1. 安装nodejs</a><br>　　由于hexo是基于nodejs实现的，因此需要安装nodejs，如果电脑上已经有nodejs环境，这一步可以忽略。首先去nodejs官网下载对应的安装包，推荐下载v10.x版本，如果nodejs版本过高会有不兼容问题。<a href="https://npm.taobao.org/mirrors/node/v10.2.0/，以windows电脑为例，下载64位.msi安装包：" target="_blank" rel="noopener">https://npm.taobao.org/mirrors/node/v10.2.0/，以windows电脑为例，下载64位.msi安装包：</a><br>　　<br><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/nodejs-download.png" alt="nodejs-download"></p>
-<p>然后安装nodejs，将路径选在D盘根目录下，当前，其他路径也是可以的，然后一路next，直到安装完成。</p>
-<img src="/images/0基础快速搭建个人博客/nodejs-install.png" alt="nodejs-install">
-
-<p>安装完后需要设置一下nodejs的相关配置，在刚才安装的目录下新建两个文件夹，node_global和node_cache，如下图所示：</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/create-dir.png" alt="create-dir"></p>
-<p>node_global用于存放全局安装的模块，node_cache指定node缓存文件夹，然后打开cmd，执行指令：</p>
-<p><code>npm config set prefix &quot;D:\nodejs\node_global&quot;</code></p>
-<p><code>npm config set cache &quot;D:\nodejs\node_cache&quot;</code></p>
-<p>若npm指令执行找不到，请检查nodejs环境变量是否正确。</p>
-<p><a href="#2"> 2. 安装git</a></p>
-<p>　　在git管网上安装git，如果电脑上已有git，这一步可以忽略，网址：<a href="https://git-scm.com/download" target="_blank" rel="noopener">https://git-scm.com/download</a> ，以windows电脑为例，下载64位.exe可执行文件，然后运行。</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/git-install.png" alt="git-install"></p>
-<p>一直点next直到安装结束，在命令行输入<code>git --version</code>检查git安装是否成功，如果git指令找不到，去系统环境变量path中增加git的安装目录。</p>
-<p><a href="#3"> 3. 安装cnpm、hexo和hexo-deployer-git</a></p>
-<p>　　由于npm安装插件是从国外的站点进行下载，速度很慢，因此可以安装cnpm替代npm，全局安装cnpm，并且指定淘宝镜像源：</p>
-<p><code>npm install -g cnpm --registry=https://registry.npm.taobao.org</code></p>
-<p>安装完成后检查cnpm指令是否正确，若cnpm指令找不到，在系统环境变量path中增加node_global目录，如下所示：</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/node_global_path.png" alt="node_global_path"></p>
-<p>cnpm安装完成并且能够正确使用后，使用cnpm安装hexo：</p>
-<p><code>cnpm install -g hexo-cli</code></p>
-<p>安装完成后可使用<code>hexo -v</code>查看是否安装成功，如果成功了，再安装hexo-deployer-git：</p>
-<p><code>cnpm install hexo-deployer-git</code></p>
-<p><a href="#4"> 4. 本地搭建hexo博客项目</a></p>
-<p>　　在桌面上新建一个文件夹blog，然后在blog文件夹下执行指令<code>hexo init</code>，如下所示：<br><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/hexo-init.png" alt="hexo-init"></p>
-<p>在初始化过程中，如果因为速度过慢而导致<code>hexo init</code>失败，可以尝试切换一下网络，重新执行<code>hexo init</code>时需要保证blog文件夹为空，当命令行出现：</p>
-<p><code>INFO  Start blogging with Hexo!</code></p>
-<p>说明hexo初始化成功，然后执行<code>hexo s</code>命令，即start hexo，在浏览器上输入<a href="http://localhost:4000/" target="_blank" rel="noopener">http://localhost:4000/</a> ,出现以下画面时，说明本地博客配置完全成功。</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/hexo-localhost.png" alt="hexo-localhost"></p>
-<p>接下来需要做的就是更换博客主题啦，在hexo官网上找到一款喜欢的主题，page页面：<a href="https://hexo.io/themes/" target="_blank" rel="noopener">https://hexo.io/themes/</a> ，然后点击主题名称到github对应的页面，将主题项目克隆到刚才建立的blog文件夹下，如下所示：</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/clone-themes.png" alt="clone-themes"></p>
-<p>当主题拷贝完成后，可以看到blog目录下的themes文件夹下会多出一个cube目录，这个就是我们刚才所下载的主题，然后去blog目录下修改_config.yml文件，设置刚才下载的主题，如下所示：</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/change-themes.png" alt="change-themes"></p>
-<p>更改完成后保存退出，此时最好重新清理生成一下新文件，执行以下指令：</p>
-<p>清除缓存文件和已经生成的静态文件 ： <code>hexo clean</code></p>
-<p>重新生成静态文件：<code>hexo g</code> ，等同于<code>hexo generate</code></p>
-<p>最后，重启服务：<code>hexo s</code>，可以看到，我们的博客网站完全变了个样式：</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/new-looks.png" alt="new-looks"></p>
-<p><a href="#5"> 5. 将本地博客部署到服务器上</a></p>
-<p>　　最后一步，由于此时博客项目此时只能在本地由你自己访问，我们需要把它部署到服务器上通过域名来访问，比较好的选择是使用代码托管平台来实现，在这我们使用github来托管我们的博客项目。</p>
-<p>在github上注册一个账号，然后创建一个仓库，如下所示：</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/new-repository.png" alt="new-repository"></p>
-<p>创建好仓库之后，进入项目下面，复制好仓库地址，如下所示：</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/clone-repository.png" alt="clone-repository"></p>
-<p>然后修改blog目录下的_config文件，如下所示：</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/add-repository.png" alt="add-repository"></p>
-<p>然后我们使用命令<code>hexo d</code>部署，等同于<code>hexo deploy</code>，执行成功后可以看到我们的github上刚创建的仓库多了许多东西，然后试着访问：<a href="https://wuguangmou.github.io/">https://wuguangmou.github.io/</a> ，如果成功出现之前本地部署的页面，说明到此已经完全成功了。</p>
-<p><img src="/images/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/success.png" alt="success"></p>
-<hr>
-<p>　　最后，简要说明一下，hexo的文章都是在source目录下的_posts中，博客文章使用markdown语言来编写，根目录下的_config文件还有一些其他的配置项，具体就不一一说明了，可以百度查看具体含义。除了hexo以外，使用其他的方式创建个人博客也是大同小异，具体可以参考官方文档。希望大家都能够顺利建站，少踩一些坑^_^。</p>
-
-    </div>
 </div>
-
-<div class="cube-article-nav">
-    <ul>
-        
-        <li class="prev">
-            <a href="/2020/05/12/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/">
-                <i class="cube-icon cube-prev" aria-hidden="true"></i>
-                redis(2)-深入了解redis持久化机制
-            </a>
-        </li>
-        
-        
-    </ul>
-</div>
-
-
-<!-- TODO 根据theme.comment的内容进行入口选择 -->
-
-
-
         </div>
         <div class="cube-right">
             
@@ -366,12 +293,12 @@
     <div class="cube-boxs">
         
         
-        <div class="cube-box-bg ">
+        <div class="cube-box ">
             <a href="/tags/redis/">#redis</a>
         </div>
         
         
-        <div class="cube-box-bg ">
+        <div class="cube-box ">
             <a href="/tags/%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/">#搭建博客</a>
         </div>
         

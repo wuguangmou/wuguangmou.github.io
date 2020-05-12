@@ -161,6 +161,84 @@
     <div class="cube-content">
         <div class="cube-left">
             
+<div class="cube-excerpt" id="cube-excerpt-redis(2)-深入了解redis持久化机制">
+    <header class="cube-excerpt-header">
+        <h1><a href="/2020/05/12/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/">redis(2)-深入了解redis持久化机制</a></h1>
+        <div class="cube-excerpt-header-msg">
+            <div class="cube-excerpt-date">
+                <i class="cube-icon cube-icon-date" aria-hidden="true"></i>
+                2020-05-12
+            </div>
+            <div class="cube-excerpt-tags">
+                <i class="cube-icon cube-icon-tag" aria-hidden="true"></i>
+                
+                <a href="/tags/redis/" class="cube-excerpt-tag-link">#redis</a>
+                
+            </div>
+        </div>
+    </header>
+    <article class="cube-excerpt-entry cube-markdown">
+        
+        
+           <center><font color="red" size="5">本文系作者原创，如需转载请注明链接</font></center>
+
+<p>　　什么是持久化（Persistence）？个人理解，持久化就是将数据（如内存中的数据）保存到永久性存储的设备（磁盘）中。对于redis数据库而言，由于在工作时，其数据都存在内存中，一旦发生断电、宕机等不可预知的灾难，redis中的数据就会全部丢失，因此，在redis中，持久化数据就显得十分必要了。</p>
+<p>redis的持久化机制：</p>
+<p>1.RDB（redis database）：每隔一段时间，把内存中的数据写入磁盘的临时文件，作为快照，恢复的时候把快照文件读进内存。如果宕机重启，那么内存里的数据肯定会没有的，那么再次启动redis后，则会恢复。</p>
+<p>2.AOF（append only file）：AOF会以日志的形式来记录服务器接收到的写操作，记录的方式是以文件追加的方式记录，当服务器重启时，AOF执行的操作就是把追加的文件从开始到结尾读取执行写操作。</p>
+<p>RBD的优点与缺点：</p>
+<ul>
+<li><strong>优点</strong></li>
+</ul>
+<ol>
+<li>每隔一段时间备份，全量备份</li>
+<li>灾备简单，可以远程传输</li>
+<li>RDB最大限度地提高了redis的性能，对于备份，父进程需要做的唯一一件事就是fork()子进程，备份的工作全部由子进程完成，主进程不会有任何io操作（不会有写入修改或删除），保证备份数据的的完整性</li>
+<li>相对AOF来说，当有更大的数据集文件时可以快速重启恢复</li>
+</ol>
+<ul>
+<li><strong>缺点</strong></li>
+</ul>
+<ol>
+<li>发生故障时，有可能会丢失最后一次的备份数据</li>
+<li>RDB通过fork()子进程的方式进行备份，当数据集很大时，fork()可能会很耗时，对CPU造成负担，甚至有可能导致Redis停止为客户端服务几毫秒甚至一秒钟</li>
+</ol>
+<p>RDB持久化设置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">####################### SNAPSHOTTING #######################</span><br><span class="line"></span><br><span class="line"># 设置RDB备份频率</span><br><span class="line">save 900 1				&#x2F;&#x2F;至少有1个key发生了更新，则会在900s后保存内存快照</span><br><span class="line">save 300 10				&#x2F;&#x2F;至少有10个key发生了更新，则会在300s后保存内存快照</span><br><span class="line">save 60 10000				&#x2F;&#x2F;至少有10000个key发生了更新，则会在1min后保存内存快照</span><br><span class="line"></span><br><span class="line"># 当存储快照时发生了错误，则停止写操作，默认yes</span><br><span class="line">stop-writes-on-bgsave-error yes</span><br><span class="line"></span><br><span class="line"># RDB备份文件压缩功能，压缩模式：LZF，默认yes开启</span><br><span class="line">rdbcompression yes</span><br><span class="line"></span><br><span class="line"># 存储rdb&#x2F;加载rdb文件时，默认开启校验</span><br><span class="line">rdbchecksum yes</span><br><span class="line"></span><br><span class="line"># RDB备份的文件名称</span><br><span class="line">dbfilename dump.rdb</span><br><span class="line"></span><br><span class="line"># RDB备份的文件路径</span><br><span class="line">dir &#x2F;usr&#x2F;local&#x2F;redis&#x2F;workspace</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>AOF的优点与缺点：</p>
+<ul>
+<li><strong>优点</strong></li>
+</ul>
+<ol>
+<li>AOF的持久化机制比RDB更好，可以设置不同的fsync策略，redis提供了三种fsync策略：永不fsync、每隔一秒fsync、每个命令fsync，实际生产中一般以秒为单位进行备份，如果发生问题，也只会丢失最后一秒的数据，大大增加了可靠性和数据完整性。</li>
+<li>当AOF日志文件太大时，redis会在后台自动执行重写机制，重写是完全安全的，不会影响客户端的读写操作。</li>
+<li>AOF 日志包含的所有写操作，会更加便于redis的解析恢复。</li>
+</ol>
+<ul>
+<li><strong>缺点</strong></li>
+</ul>
+<ol>
+<li>对于同一个数据集，AOF文件通常大于等效的RDB文件。</li>
+<li>根据确定的fsync策略，AOF可能会比RDB慢，因此，通常将fsync设置成秒级。</li>
+</ol>
+<p>AOF持久化设置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">####################### APPEND ONLY MODULE #######################</span><br><span class="line"></span><br><span class="line"># AOF备份是否开启</span><br><span class="line">appendonly yes</span><br><span class="line"></span><br><span class="line"># AOF备份文件名称，默认appendonly.aof</span><br><span class="line">appendfilename appendonly.aof</span><br><span class="line"></span><br><span class="line"># AOF同步策略，每秒同步一次，另外还有always和no，一般都是选择everysec</span><br><span class="line">appendfsync everysec</span><br><span class="line"></span><br><span class="line"># AOF重写时是否需要同步当前操作，默认为no，可以保证数据安全</span><br><span class="line">no-appendfsync-on-rewrite no</span><br><span class="line"></span><br><span class="line"># AOF重写机制，当前文件的大小超过上一个文件大小的100%，并且文件体积达到64M时，触发重写机制</span><br><span class="line">auto-aof-rewrite-percentage 100</span><br><span class="line">auto-aof-rewrite-min-size 64mb</span><br></pre></td></tr></table></figure>
+
+<p>　　总结：如果能够接受一段时间的缓存丢失，那么可以使用RDB；如果对实时数据比较关心，则可以使用AOP，当然，如果从辩证的角度看待问题，肯定是一起结合使用最好，用RDB做冷备份（每隔一段时间备份一次），用AOF做热备份（每隔1s做一次备份）。
+　　</p>
+<hr>
+<p>　　redis在4.0版本后实现了混合持久化机制，将RDB备份文件与增量的AOF日志文件存在一起，这里的AOF日志不再是全量的日志，通过这样，兼容解决了RDB的缺点和AOF的缺点，在redis重启的时候，可以先加载rdb文件到内存中去，然后再将增量的AOF命令追加写入。</p>
+<p><img src="/images/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/mix-module-reload.png" alt="mix-module-reload"><br>混合持久化设置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># RDB-AOF混合持久化配置</span><br><span class="line">aof-use-rdb-preamble yes</span><br></pre></td></tr></table></figure>
+        
+    </article>
+    <footer class="cube-excerpt-footer">
+        <a class="cube-excerpt-more" href="/2020/05/12/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/">Read More</a>
+    </footer>
+</div>
+
 <div class="cube-excerpt" id="cube-excerpt-0基础快速搭建个人博客">
     <header class="cube-excerpt-header">
         <h1><a href="/2020/05/05/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/">0基础快速搭建个人博客</a></h1>
@@ -305,8 +383,8 @@
     
     
     <div class="count">
-        <a class="count articles"><span>1</span>Article</a>
-        <a class="count tags"><span>1</span>Tags</a>
+        <a class="count articles"><span>2</span>Article</a>
+        <a class="count tags"><span>2</span>Tags</a>
         <a class="count categories"><span>0</span>Categories</a>
     </div>
 </div>
@@ -344,10 +422,23 @@
                     <span>1</span>
                 </p>
                 <p class="title">
-                    <a href="/2020/05/05/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/" title="0基础快速搭建个人博客">0基础快速搭建个人博客</a>
+                    <a href="/2020/05/12/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/" title="redis(2)-深入了解redis持久化机制">redis(2)-深入了解redis持久化机制</a>
                 </p>
             </div>
             
+        </li>
+        
+        
+        
+        <li>
+            <div class="normal">
+                <p class="index">
+                    <span>2</span>
+                </p>
+                <p class="title">
+                    <a href="/2020/05/05/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/" title="0基础快速搭建个人博客">0基础快速搭建个人博客</a>
+                </p>
+            </div>
         </li>
         
         
@@ -363,6 +454,11 @@
         <a href="/tags">Tagcloud</a>
     </div>
     <div class="cube-boxs">
+        
+        
+        <div class="cube-box ">
+            <a href="/tags/redis/">#redis</a>
+        </div>
         
         
         <div class="cube-box ">
