@@ -181,7 +181,7 @@
         
         <center><font color="red" size="5">本文系作者原创，如需转载请注明链接</font></center>
 
-<p>　　什么是持久化（Persistence）？个人理解，持久化就是将数据（如内存中的数据）保存到永久性存储的设备（磁盘）中。对于redis数据库而言，由于在工作时，其数据都存在内存中，一旦发生断电、宕机等不可预知的灾难，redis中的数据就会全部丢失，因此，在redis中，持久化数据就显得十分必要了。</p>
+<p>　　什么是持久化（Persistence）？个人理解，持久化就是将数据（如内存中的数据）保存到永久性存储的设备（磁盘）中。对于redis数据库而言，由于在工作时，其数据都存在内存中，一旦发生断电、宕机等不可预知的灾难，redis中的数据就会全部丢失，因此，在redis中，持久化数据就显得十分必要了。<a id="more"></a></p>
 <p>redis的持久化机制：</p>
 <p>1.RDB（redis database）：每隔一段时间，把内存中的数据写入磁盘的临时文件，作为快照，恢复的时候把快照文件读进内存。如果宕机重启，那么内存里的数据肯定会没有的，那么再次启动redis后，则会恢复。</p>
 <p>2.AOF（append only file）：AOF会以日志的形式来记录服务器接收到的写操作，记录的方式是以文件追加的方式记录，当服务器重启时，AOF执行的操作就是把追加的文件从开始到结尾读取执行写操作。</p>
@@ -237,6 +237,13 @@
 <div class="cube-article-nav">
     <ul>
         
+        <li class="prev">
+            <a href="/2020/05/18/redis(3)-redis%E7%9A%84%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%93%A8%E5%85%B5%E6%A8%A1%E5%BC%8F/">
+                <i class="cube-icon cube-prev" aria-hidden="true"></i>
+                redis(3)-redis的主从架构与哨兵模式
+            </a>
+        </li>
+        
         
         <li class="next">
             <a href="/2020/05/05/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/">
@@ -290,7 +297,7 @@
     
     
     <div class="count">
-        <a class="count articles"><span>2</span>Article</a>
+        <a class="count articles"><span>3</span>Article</a>
         <a class="count tags"><span>2</span>Tags</a>
         <a class="count categories"><span>0</span>Categories</a>
     </div>
@@ -329,7 +336,7 @@
                     <span>1</span>
                 </p>
                 <p class="title">
-                    <a href="/2020/05/12/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/" title="redis(2)-深入了解redis持久化机制">redis(2)-深入了解redis持久化机制</a>
+                    <a href="/2020/05/18/redis(3)-redis%E7%9A%84%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%93%A8%E5%85%B5%E6%A8%A1%E5%BC%8F/" title="redis(3)-redis的主从架构与哨兵模式">redis(3)-redis的主从架构与哨兵模式</a>
                 </p>
             </div>
             
@@ -341,6 +348,19 @@
             <div class="normal">
                 <p class="index">
                     <span>2</span>
+                </p>
+                <p class="title">
+                    <a href="/2020/05/12/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/" title="redis(2)-深入了解redis持久化机制">redis(2)-深入了解redis持久化机制</a>
+                </p>
+            </div>
+        </li>
+        
+        
+        
+        <li>
+            <div class="normal">
+                <p class="index">
+                    <span>3</span>
                 </p>
                 <p class="title">
                     <a href="/2020/05/05/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/" title="0基础快速搭建个人博客">0基础快速搭建个人博客</a>

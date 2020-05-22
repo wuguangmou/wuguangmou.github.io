@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="author" content="吴广谋">
+    
+    
+    
+    
+    
+    
+    <title>redis(3)-redis的主从架构与哨兵模式 | Hexo</title>
+    <!-- inject:style -->
+    <link href="/css/style.css" rel="stylesheet" type="text/css">
+    <!-- endinject -->
+    <style>
+        .cube-loading {
+            top: 0;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: url('/images/lg/loading.gif') no-repeat center center;
+            background-color: rgba(0,0,0,.7);
+        }
+
+        .cube-loading.out {
+            display: none;
+        }
+
+        .cube-loading:before {
+            display: block;
+            content: 'Loading';
+            position: relative;
+            width: 100%;
+            top: 50%;
+            right: -50%;
+            color: #fff;
+        }
+
+        @media(max-width: 768px) {
+            .cube-loading:before {
+                font-size: 1.2em;
+                transform: translate(-24px,20px);
+                -webkit-transform: translate(-24px,20px);
+                -o-transform: translate(-24px,20px);
+                -ms-transform: translate(-24px,20px);
+            }
+        }
+
+        @media(min-width: 768px) {
+            .cube-loading:before {
+
+            }
+        }
+    </style>
+    
+<meta name="generator" content="Hexo 4.2.0"></head>
+<body>
+<div class="cube-body">
+    <nav id="cube-top-memu" class="cube-menu">
+    <ul class="cube-menu-collapse">
+        
+        <li>
+            <i class="cube-icon cube-icon-home" aria-hidden="true"></i>
+            <a href="/">首页</a>
+        </li>
+        
+        <li>
+            <i class="cube-icon cube-icon-archive" aria-hidden="true"></i>
+            <a href="/archives">归档</a>
+        </li>
+        
+        <li>
+            <i class="cube-icon cube-icon-categories" aria-hidden="true"></i>
+            <a href="/categories">分类</a>
+        </li>
+        
+        <li>
+            <i class="cube-icon cube-icon-tags" aria-hidden="true"></i>
+            <a href="/tags">标签</a>
+        </li>
+        
+        <li>
+            <i class="cube-icon cube-icon-about" aria-hidden="true"></i>
+            <a href="/about-me">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+<nav class="cube-side-menu" id="cube-side-menu">
+    <ul class="cube-menu-list">
+        
+        <li>
+            <a class="lrc-control">Open Lyrics</a>
+        </li>
+        
+        <li>
+            <a class="scroll-to-top">Top</a>
+        </li>
+    </ul>
+</nav>
+    <header class="cube-header" id="cube-header">
+    <img src=" http://cube-1252774894.cosgz.myqcloud.com/background.png " alt="头部背景图片">
+    
+    <div class="cube-type">
+        <span class="cube-typed-title">吴广谋の个人博客</span>
+        <span class="cube-typed-cursor">|</span>
+    </div>
+    
+</header>
+
+    <style>
+        nav.cube-menu:before {
+            content: '';
+            visibility: hidden;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 44px;
+        
+            filter: blur(5px);
+            -webkit-filter: blur(5px);
+        
+            z-index: -1;
+            background-image: url('http://cube-1252774894.cosgz.myqcloud.com/background.png');
+            background-repeat: no-repeat;
+            background-position: center -356px;
+            background-size: cover;
+            background-color: transparent;
+        }
+
+        header.cube-background.cube-header-background {
+            visibility: hidden;
+            background-image: url('http://cube-1252774894.cosgz.myqcloud.com/background.png');
+            background-position: center -400px;
+        }
+    </style>
+    <header class="cube-background cube-header-background">
+        
+        <div class="cube-type">
+            <span class="cube-typed-title">吴广谋の个人博客</span>
+            <span class="cube-typed-cursor">|</span>
+        </div>
+        
+    </header>
+    <div class="load-header-background"></div>
+    <script>
+        (function (window) {
+
+            window.headerModule = {}
+            window.headerModule.image = {
+                width: '2000',
+                height: '1414'
+            }
+
+        })(window)
+    </script>
+    
+    <div class="cube-content">
+        <div class="cube-left">
+            <div class="cube-article">
+    <h1 class="title">redis(3)-redis的主从架构与哨兵模式</h1>
+    
+    <div class="cube-article-header">
+        <div class="cube-article-date">
+            <i class="cube-icon cube-icon-date" aria-hidden="true"></i>
+            <!-- moment.js对象 -->
+            2020-05-18
+        </div>
+        <div class="cube-article-tags">
+    <i class="cube-icon cube-icon-tag" aria-hidden="true"></i>
+    
+    <a href="/tags/redis/">#redis</a>
+    
+</div>
+    </div>
+    
+    <div class="cube-article-content cube-markdown">
+        
+        <center><font color="red" size="5">本文系作者原创，如需转载请注明链接</font></center>
+
+<p>　　数据库的主从架构：在大多数业务场景中，对于数据库操作的也符合28原则，即：80%的操作是查询数据，20%的操作是修改数据，因此我们可以将读和写的操作分离，让主节点负责修改数据，从节点负责查询数据。通过数据库的读写分离，可以提高整个系统的性能，同时，数据有了多个容灾副本，也可以提高数据的安全性和系统的可用性。</p>
+<p>　　redis的主从架构：作为一个缓存数据库，redis当然也可以配置主从架构，本文将配置redis一主二从架构，即一个主节点，两个从节点<a id="more"></a>，如下图所示：</p>
+<p><img src="/images/redis(3)-redis%E7%9A%84%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%93%A8%E5%85%B5%E6%A8%A1%E5%BC%8F/master-slave.png" alt="master-slave"></p>
+<p>redis主节点配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 指定主节点地址为内网地址</span><br><span class="line">bind 192.168.0.1	  &#x2F;&#x2F;此地址为服务器的内网IP，不要设置成127.0.0.1</span><br><span class="line"></span><br><span class="line"># 主节点连接密码，建议开启</span><br><span class="line">requirepass $password</span><br></pre></td></tr></table></figure>
+
+<p>redis从节点配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">####################### REPLICATION #######################</span><br><span class="line"></span><br><span class="line"># redis从节点配置，ip为master节点的IP，port为master节点的port</span><br><span class="line">replicaof 192.168.0.1 6379</span><br><span class="line"></span><br><span class="line"># master主节点的连接密码，无密码可注释，建议配置</span><br><span class="line">masterauth $master-password</span><br><span class="line"></span><br><span class="line"># 从节点设置只读</span><br><span class="line">replica-read-only yes</span><br></pre></td></tr></table></figure>
+
+<p>　　当两个从节点都配置好REPLICATION后，就可以进行查看相应信息了。重启两个slave节点（注：在重启前，一定需要将本地的rdb文件与aof文件清空，否则可能会导致主节点数据与从节点数据不一致），重启完成后，使用redis-cli连接主节点，然后输入<code>info replication</code>，当出现以下情况时，说明配置已经成功了：</p>
+<p><img src="/images/redis(3)-redis%E7%9A%84%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%93%A8%E5%85%B5%E6%A8%A1%E5%BC%8F/master-info-replication.png" alt="master-info-replication"></p>
+<p>当然，也可以连接从节点，然后尝试<code>info replication</code>命令，在从节点输出时，显示的role为slave，如下所示：</p>
+<p><img src="/images/redis(3)-redis%E7%9A%84%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%93%A8%E5%85%B5%E6%A8%A1%E5%BC%8F/slave-info-replication.png" alt="slave-info-replication"></p>
+<p>　　最后，我们可以来进行测试：</p>
+<p>　　主节点输入<code>mset name wu age 18</code>，然后去从节点查看，发现从节点也有name和age的值，在从节点输入指令<code>mget name age</code>，显示”wu”、”18”，最后我们在从节点尝试删除数据，输入<code>del name</code>，这时候会提示<em>(error) READONLY You can’t write against a read only slave</em>，至此，说明我们的配置是完全正确且生效的。</p>
+<p>　　有意思的是，由于政治正确等原因，redis在5.0.0版本后使用replicaof指令替换了slave指令，可能使用master/slave等词会冒犯到某些人群（笑）。本文使用的命令也是基于redis5.0之后的版本，因此可能会与早期的版本有些出入。</p>
+<hr>
+<p>　　做完以上配置后，可能聪明的你就会问了，主节点的redis是如何与从节点的redis保持数据一致性的呢？实际上，redis通过了主从复制来保证主节点与从节点之间的数据一致性的。redis的主从复制有两种机制：全量同步与增量同步。</p>
+<ul>
+<li>全量同步</li>
+</ul>
+<p>　　redis的全量同步一般发生在slave初始化的时候，这时候slave节点需要将master节点的所有数据都复制一份，具体步骤如下：</p>
+<ol>
+<li><p>slave节点通过syncWithMaster()函数来连接master节点，它们建立的连接是socket连接，当连接成功后，slave节点会发送sync命令到master节点（redis2.8版本后使用psync命令代替了sync命令），请求同步数据。</p>
+</li>
+<li><p>master节点收到sync命令后会执行bgsave命令，启动一个子进程，在后台保存一份最新的内存快照rdb文件到磁盘上，此后，如果有新的修改命令（del/set）到master节点，master节点会使用缓冲区记录所有的修改命令。</p>
+</li>
+<li><p>master节点将生成的rdb文件，发送给slave节点，然后slave节点会将rdb文件中的数据导入到自己的数据库中，在这个过程中，slave节点会处于阻塞状态。</p>
+</li>
+<li><p>在master节点发送完rdb文件后，会将在此期间内缓冲区中的所有修改命令，以指令的形式发送给slave节点，当slave节点完成快照文件rdb的载入后，开始接受命令请求（不再处于阻塞状态），执行来自主节点缓冲区的写请求，此时，slave节点就可以开始处理客户端的请求了。</p>
+</li>
+</ol>
+<p><img src="/images/redis(3)-redis%E7%9A%84%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%93%A8%E5%85%B5%E6%A8%A1%E5%BC%8F/master-slave-replication.png" alt="master-slave-replication"></p>
+<ul>
+<li>增量同步：<br>增量同步指的是当slave节点初始化结束，并且能够正常工作后，master节点每接受并执行一个写操作都会同步给所有的slave节点，slave节点收到后会执行该命令，从而保证自身数据与master数据的一致性。</li>
+</ul>
+<p>tips :上面说过redis主节点是通过网络将rdb文件发送给从节点的，如果网络延迟较大的话，redis还提供了另一种解决方案，即<strong>无磁盘化复制</strong>：主节点会直接在内存中创建rdb文件，然后通过网络，发送给从节点，这样可以避免磁盘的读写，从而提高效率。（当内网带宽比较高，且服务器硬盘是机械硬盘而不是SSD，就可以使用这种方式去同步数据）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># 开启redis无磁盘化同步，默认为no</span><br><span class="line">repl-diskless-sync yes</span><br><span class="line"># 无磁盘化同步等待时延，单位s，等待的是所有的从节点连接到主节点</span><br><span class="line">repl-diskless-sync-delay 5</span><br></pre></td></tr></table></figure>
+
+
+
+<hr>
+<p>　　在知道了主从架构是如何同步数据之后，可能聪明的你又要问了，那假如主节点出了问题怎么办，岂不是所有的配置都前功尽弃？所以，我们又要引出一个<strong>哨兵</strong>（sentinel）的概念。哨兵是redis中的一个组件，每个哨兵都是一个独立的进程。redis中的哨兵主要是为了解决主从架构中节点出现宕机的情况，宕机分为两种情况：</p>
+<ol>
+<li>从节点出现问题，此时只需要将问题排除后重启redis从节点，它会自动加入到原来的主从架构中，并且自动完成数据同步。</li>
+<li>主节点出现问题，当哨兵检测到主节点出现问题时，它会进行一次自动故障迁移，使用master节点下的slave节点去代替master工作，当失效的master节点重新恢复重连后，它并不会恢复原来的地位，而是变成slave节点，在新的master节点下继续工作（与keepalive相反）。</li>
+</ol>
+<p>哨兵配置，修改sentinel.conf:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"># sentinel运行端口</span><br><span class="line">port 26379</span><br><span class="line"></span><br><span class="line"># 将sentinel作为守护进程去运行，默认no</span><br><span class="line">daemonize yes</span><br><span class="line"></span><br><span class="line"># 启用守护进程运行后，redis将在&#x2F;var&#x2F;run&#x2F;redis-sentinel.pid中写入一个pid文件</span><br><span class="line">pidfile &#x2F;var&#x2F;run&#x2F;redis-sentinel.pid</span><br><span class="line"></span><br><span class="line"># sentinel进程产生的日志文件存放路径</span><br><span class="line">logfile &#x2F;usr&#x2F;local&#x2F;redis&#x2F;sentinel&#x2F;redis-sentinel.log</span><br><span class="line"></span><br><span class="line"># 每个长时间运行的进程都应该有一个明确定义的工作目录,sentinel进程也是一样</span><br><span class="line">dir &#x2F;usr&#x2F;local&#x2F;redis&#x2F;sentinel</span><br><span class="line"></span><br><span class="line"># sentinel monitor &lt;master-name&gt; &lt;ip&gt; &lt;redis-port&gt; &lt;quorum&gt;</span><br><span class="line"># sentinel核心配置，master-name不能有&quot;.-_&quot;以外的特殊字符，ip为主节点内网ip，port为主节点port</span><br><span class="line"># quorum可以理解为判断出错的最小人数，只有在至少&lt;quorum&gt;个哨兵都无法ping通主节点时，才会去进行故障转移</span><br><span class="line">sentinel monitor test-master 192.168.0.1 6379 2</span><br><span class="line"></span><br><span class="line"># 当redis配置了密码时，则必须配置认证，否则不能自动切换</span><br><span class="line">sentinel auth-pass test-master $master-password</span><br><span class="line"></span><br><span class="line"># 设置master节点或其下面的slave节点和sentinel进程超时时间，默认30s，即30s没有回复，即认为节点处于失效状态</span><br><span class="line">sentinel down-after-milliseconds test-master 10000</span><br><span class="line"></span><br><span class="line"># 故障转移期间，slave节点并行同步的数量</span><br><span class="line">sentinel parallel-syncs test-master 1</span><br><span class="line"></span><br><span class="line"># sentinel故障转移超时时间，默认3分钟</span><br><span class="line">sentinel failover-timeout test-master 180000</span><br></pre></td></tr></table></figure>
+
+<p>配置完成后，在redis的src目录下（查看src目录下是否有redis-sentinel文件）执行命令<code>./redis-sentinel ../sentinel.conf &amp;</code>,执行成功后，可以查看哨兵是否正常运行：</p>
+<p><img src="/images/redis(3)-redis%E7%9A%84%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%93%A8%E5%85%B5%E6%A8%A1%E5%BC%8F/start-sentinel-success.png" alt="start-sentinel-success"></p>
+<p>配置成功的架构图如下所示：</p>
+<p><img src="/images/redis(3)-redis%E7%9A%84%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%93%A8%E5%85%B5%E6%A8%A1%E5%BC%8F/master-slave-sentinel.png" alt="master-slave-sentinel"></p>
+<p>　　在正常的生产环境上，每一个节点应该是一个独立的服务器，且它们能够相互ping通，sentinel的数量应该保证是奇数个且大于等于3（选举机制，少数服从多数）。</p>
+<hr>
+<p>　　总结：使用主从读写分离架构可以有效的提高redis的负载能力，redis主从架构中主节点与从节点通过全量同步与增量同步来保持数据的一致性，此外，redis还提供了无磁盘化复制的同步方案，用于解决在同步过程中低效的磁盘IO情况，最后，使用了哨兵机制去监听节点的变化状态，当主节点出现故障时，会去自动把从节点升为主节点，从而保证了主从架构的高可用。</p>
+
+    </div>
+</div>
+
+<div class="cube-article-nav">
+    <ul>
+        
+        
+        <li class="next">
+            <a href="/2020/05/12/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/">
+                redis(2)-深入了解redis持久化机制
+                <i class="cube-icon cube-next" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+<!-- TODO 根据theme.comment的内容进行入口选择 -->
+
+
+
+        </div>
+        <div class="cube-right">
+            
+
+<div class="cube-search cube-sidebar" id="cube-search">
+    <div class="search-container">
+        <input type="text" placeholder="Search" class="cube-search-input" id="cube-search-input">
+        <i class="cube-icon cube-icon-search cube-search-submit" aria-hidden="true"></i>
+    </div>
+    <!-- TODO 通过给window赋一个全局变量，通过脚本赋值 -->
+</div>
+<script>
+    (function (window) {
+        'use strict';
+        window.searchModule = {}
+        window.searchModule.JSONUrl = '/content.json'
+        window.searchModule.rootUrl = '/'
+    })(window)
+</script>
+<div class="cube-search-form">
+    <div class="cube-search-control">
+        <input type="text" placeholder="Search" class="search-input">
+        <a class="close-button">
+            <i class="cube-icon cube-close" aria-hidden="true"></i>
+        </a>
+    </div>
+    <div class="cube-search-result"></div>
+</div>
+
+
+<div class="cube-author cube-sidebar" id="cube-author">
+    
+    
+    <span>吴广谋</span>
+    
+    
+    <div class="count">
+        <a class="count articles"><span>3</span>Article</a>
+        <a class="count tags"><span>2</span>Tags</a>
+        <a class="count categories"><span>0</span>Categories</a>
+    </div>
+</div>
+
+
+
+<div class="cube-music cube-sidebar" id="cube-music">
+    <div class="cube-player aplayer" id="cube-player"></div>
+</div>
+<script>
+    (function (window) {
+        window.musicModule = {}
+        window.musicModule.musicConfig = '{"narrow":false,"autoplay":false,"showlrc":3,"theme":"#b7daff","mutex":true,"mode":"circulation","preload":"auto","listmaxheight":"513px","music":[{"title":"Dear friends","author":"TRIPLANE","url":"http://cube-1252774894.cosgz.myqcloud.com/music/source/TRIPLANE - Dear friends.mp3","lrc":"http://cube-1252774894.cosgz.myqcloud.com/music/lrc/Dear friends - TRIPLANE.lrc","pic":"http://cube-1252774894.cosgz.myqcloud.com/music/image/TRIPLANE - Dear friends.jpg"},{"title":"Butter-Fly","author":"和田光司","url":"http://cube-1252774894.cosgz.myqcloud.com/music/source/和田光司 - Butter-Fly (ピアノヴァージョン).mp3","lrc":"http://cube-1252774894.cosgz.myqcloud.com/music/lrc/Butter-Fly (ピアノヴァージョン) - 和田光司.lrc","pic":"http://cube-1252774894.cosgz.myqcloud.com/music/image/和田光司 - Butter-Fly (ピアノヴァージョン).jpg"},{"title":"宵闇花火","author":"葉月ゆら","url":"http://cube-1252774894.cosgz.myqcloud.com/music/source/葉月ゆら - 宵闇花火.mp3","lrc":"http://cube-1252774894.cosgz.myqcloud.com/music/lrc/宵闇花火 - 葉月ゆら.lrc","pic":"http://cube-1252774894.cosgz.myqcloud.com/music/image/葉月ゆら - 宵闇花火.jpg"}]}'
+        window.musicModule.lrcConfig = {
+            open: 'Open Lyrics',
+            close: 'Close Lyrics'
+        }
+    })(window)
+</script>
+
+
+
+<div class="cube-recent-posts cube-sidebar" id="cube-recent-posts">
+    <div class="title">
+        <a>Recent Posts</a>
+    </div>
+    <ul class="list">
+        
+        
+        <li>
+            <!-- TODO 如果文章要显示图片，那么在front-matter上添加preview属性(url or path) -->
+            
+            <div class="normal">
+                <p class="index first">
+                    <span>1</span>
+                </p>
+                <p class="title">
+                    <a href="/2020/05/18/redis(3)-redis%E7%9A%84%E4%B8%BB%E4%BB%8E%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%93%A8%E5%85%B5%E6%A8%A1%E5%BC%8F/" title="redis(3)-redis的主从架构与哨兵模式">redis(3)-redis的主从架构与哨兵模式</a>
+                </p>
+            </div>
+            
+        </li>
+        
+        
+        
+        <li>
+            <div class="normal">
+                <p class="index">
+                    <span>2</span>
+                </p>
+                <p class="title">
+                    <a href="/2020/05/12/redis(2)-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/" title="redis(2)-深入了解redis持久化机制">redis(2)-深入了解redis持久化机制</a>
+                </p>
+            </div>
+        </li>
+        
+        
+        
+        <li>
+            <div class="normal">
+                <p class="index">
+                    <span>3</span>
+                </p>
+                <p class="title">
+                    <a href="/2020/05/05/0%E5%9F%BA%E7%A1%80%E5%BF%AB%E9%80%9F%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/" title="0基础快速搭建个人博客">0基础快速搭建个人博客</a>
+                </p>
+            </div>
+        </li>
+        
+        
+    </ul>
+</div>
+
+
+
+
+
+<div class="cube-tagcloud cube-sidebar" id="cube-tagcloud">
+    <div class="title">
+        <a href="/tags">Tagcloud</a>
+    </div>
+    <div class="cube-boxs">
+        
+        
+        <div class="cube-box-bg ">
+            <a href="/tags/redis/">#redis</a>
+        </div>
+        
+        
+        <div class="cube-box-bg ">
+            <a href="/tags/%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/">#搭建博客</a>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<div class="cube-links cube-sidebar" id="cube-links">
+    <div class="title">
+        <a>Links</a>
+    </div>
+    <ul class="list">
+        
+        <li>
+            
+            
+            <img src="http://cube-1252774894.cosgz.myqcloud.com/links/GitHub.png">
+            
+            <a href="https://github.com/吴广谋" target="_blank">GitHub</a>
+        </li>
+        
+        <li>
+            
+            
+            <img src="http://cube-1252774894.cosgz.myqcloud.com/links/Coding.png">
+            
+            <a href="https://coding.net/u/SORA1" target="_blank">Coding</a>
+        </li>
+        
+        <li>
+            
+            
+            <img src="http://cube-1252774894.cosgz.myqcloud.com/links/SF.png">
+            
+            <a href="https://segmentfault.com/u/aonosora" target="_blank">SF社区</a>
+        </li>
+        
+        <li>
+            
+            
+            <img src="http://cube-1252774894.cosgz.myqcloud.com/links/开发者头条.png">
+            
+            <a href="https://toutiao.io/u/148070" target="_blank">开发者头条</a>
+        </li>
+        
+    </ul>
+</div>
+
+
+
+<div class="cube-friend-links cube-sidebar" id="cube-friend-links">
+    <div class="title">
+        <a>Friend Links</a>
+    </div>
+    <ul class="list">
+        
+        <li>
+            <!-- TODO change avatar.png to friend.png-->
+            <img src="http://cube-1252774894.cosgz.myqcloud.com/friend_links/micblo.png">
+            <a href="https://blog.micblo.com/" target="_blank">罗大佬</a>
+        </li>
+        
+        <li>
+            <!-- TODO change avatar.png to friend.png-->
+            <img src="http://cube-1252774894.cosgz.myqcloud.com/friend_links/DIYgod.jpg">
+            <a href="https://www.anotherhome.net/" target="_blank">DIYgod</a>
+        </li>
+        
+        <li>
+            <!-- TODO change avatar.png to friend.png-->
+            <img src="/images/friend_links.jpg ">
+            <a href="https://aonosora.com/" target="_blank">咪西西の部落格</a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+    </div>
+</div>
+<footer class="cube-footer">
+    
+© 2017 吴广谋
+
+<br>
+Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>.&nbsp;Theme by <a href="https://github.com/ZEROKISEKI" target="_blank">AONOSORA</a>
+</footer>
+<!-- inject:script -->
+<script src="/js/script.js"></script>
+<!-- endinject -->
+<div class="cube-loading out"></div>
+</body>
+</html>
